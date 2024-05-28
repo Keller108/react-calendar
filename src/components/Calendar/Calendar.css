@@ -1,0 +1,60 @@
+.calendar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .month {
+    width: 48%;
+  }
+  
+  .month-title {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .weekdays {
+    display: flex;
+  }
+  
+  .weekday {
+    width: 14.28%; /* 100% / 7 days in a week */
+    text-align: center;
+    font-weight: bold;
+    padding: 10px 0;
+    background-color: #f0f0f0;
+  }
+  
+  .days {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .day {
+    width: 14.28%; /* 100% / 7 days in a week */
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+  }
+  
+  .day.selected {
+    background-color: blue;
+    color: white;
+  }
+  
+  .day.in-range {
+    background-color: lightblue;
+    color: white;
+  }
+  
+  .day.today {
+    background-color: lightcyan;
+  }
+  
+  button {
+    margin: 10px;
+    padding: 10px;
+    cursor: pointer;
+  }
+  
