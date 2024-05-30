@@ -18,6 +18,8 @@ import {
 } from 'date-fns';
 import './Calendar.css';
 
+const weekDayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
 export const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [futureDate, setFutureDate] = useState(addMonths(new Date(), 1));
@@ -53,12 +55,12 @@ export const Calendar: React.FC = () => {
   const renderDays = (start: Date, end: Date, currentMonth: number) => {
     const days = eachDayOfInterval({ start, end });
     const weeks: JSX.Element[][] = [];
-    let week: JSX.Element[] = [];
 
+    let week: JSX.Element[] = [];
     days.forEach((day, index) => {
-      const dayElement = (
+      week.push(
         <div
-          key={index}
+          key={day.toString()}
           className={`day 
             ${selectedDate && isSameDay(day, selectedDate) ? 'selected' : ''} 
             ${periodStart && periodEnd && isWithinInterval(day, { start: periodStart, end: periodEnd }) ? 'in-range' : ''} 
@@ -69,7 +71,6 @@ export const Calendar: React.FC = () => {
           <span className="day-number">{format(day, 'd')}</span>
         </div>
       );
-      week.push(dayElement);
       if (week.length === 7 || index === days.length - 1) {
         weeks.push(week);
         week = [];
@@ -98,13 +99,9 @@ export const Calendar: React.FC = () => {
           <button onClick={() => handleNextMonth(monthType)}>&gt;</button>
         </div>
         <div className="weekdays">
-          <div className="weekday">Mon</div>
-          <div className="weekday">Tue</div>
-          <div className="weekday">Wed</div>
-          <div className="weekday">Thu</div>
-          <div className="weekday">Fri</div>
-          <div className="weekday">Sat</div>
-          <div className="weekday">Sun</div>
+          {weekDayNames.map((day, index) => (
+            <div className="weekday" key={index}>{day}</div>
+          ))}
         </div>
         <div className="days">{renderDays(startDate, endDate, currentMonth)}</div>
       </div>
@@ -112,9 +109,13 @@ export const Calendar: React.FC = () => {
   };
 
   const handlePreviousMonth = (monthType: 'current' | 'future') => {
+    const isSameMonthCheck = (newDate: Date) => isSameMonth(newDate, currentDate);
+
     if (monthType === 'current') {
-      setCurrentDate(subMonths(currentDate, 1));
-      if (isSameMonth(currentDate, futureDate)) {
+      const newCurrentDate = subMonths(currentDate, 1);
+      setCurrentDate(newCurrentDate);
+
+      if (isSameMonthCheck(futureDate)) {
         setFutureDate(subMonths(futureDate, 1));
       }
     } else {
@@ -127,12 +128,15 @@ export const Calendar: React.FC = () => {
   };
 
   const handleNextMonth = (monthType: 'current' | 'future') => {
+    const isSameMonthCheck = (newDate: Date) => isSameMonth(newDate, futureDate);
+
     if (monthType === 'current') {
       const newCurrentDate = addMonths(currentDate, 1);
-      if (isSameMonth(newCurrentDate, futureDate)) {
+      setCurrentDate(newCurrentDate);
+
+      if (isSameMonthCheck(newCurrentDate)) {
         setFutureDate(addMonths(futureDate, 1));
       }
-      setCurrentDate(newCurrentDate);
     } else {
       setFutureDate(addMonths(futureDate, 1));
     }
