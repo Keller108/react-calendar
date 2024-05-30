@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   addMonths,
+  subMonths,
   format,
   startOfMonth,
   endOfMonth,
@@ -11,17 +12,20 @@ import {
   isWithinInterval,
   isBefore,
   isToday,
+  getMonth,
+  getYear,
+  isSameMonth
 } from 'date-fns';
 import './Calendar.css';
 
 export const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [futureDate, setFutureDate] = useState(addMonths(new Date(), 1));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [periodStart, setPeriodStart] = useState<Date | null>(null);
   const [periodEnd, setPeriodEnd] = useState<Date | null>(null);
 
   const today = new Date();
-  const nextMonth = addMonths(currentDate, 1);
 
   const handleDayClick = (day: Date) => {
     if (!periodStart || (periodStart && periodEnd)) {
@@ -46,31 +50,53 @@ export const Calendar: React.FC = () => {
     setSelectedDate(null);
   };
 
-  const renderDays = (start: Date, end: Date) => {
+  const renderDays = (start: Date, end: Date, currentMonth: number) => {
     const days = eachDayOfInterval({ start, end });
-    return days.map(day => (
-      <div
-        key={day.toString()}
-        className={`day 
-          ${selectedDate && isSameDay(day, selectedDate) ? 'selected' : ''} 
-          ${periodStart && periodEnd && isWithinInterval(day, { start: periodStart, end: periodEnd }) ? 'in-range' : ''} 
-          ${isSameDay(day, today) ? 'today' : ''}`}
-        onClick={() => handleDayClick(day)}
-      >
-        <span className="day-number">{format(day, 'd')}</span>
+    const weeks: JSX.Element[][] = [];
+    let week: JSX.Element[] = [];
+
+    days.forEach((day, index) => {
+      const dayElement = (
+        <div
+          key={index}
+          className={`day 
+            ${selectedDate && isSameDay(day, selectedDate) ? 'selected' : ''} 
+            ${periodStart && periodEnd && isWithinInterval(day, { start: periodStart, end: periodEnd }) ? 'in-range' : ''} 
+            ${isSameDay(day, today) ? 'today' : ''} 
+            ${getMonth(day) === currentMonth ? 'current-month' : ''}`}
+          onClick={() => handleDayClick(day)}
+        >
+          <span className="day-number">{format(day, 'd')}</span>
+        </div>
+      );
+      week.push(dayElement);
+      if (week.length === 7 || index === days.length - 1) {
+        weeks.push(week);
+        week = [];
+      }
+    });
+
+    return weeks.map((week, index) => (
+      <div className="week" key={index}>
+        {week}
       </div>
     ));
   };
 
-  const renderMonth = (date: Date) => {
+  const renderMonth = (date: Date, monthType: 'current' | 'future') => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     const startDate = startOfWeek(start, { weekStartsOn: 1 });
     const endDate = endOfWeek(end, { weekStartsOn: 1 });
+    const currentMonth = getMonth(date);
 
     return (
-      <div className="month">
-        <div className="month-title">{format(date, 'MMMM yyyy')}</div>
+      <div className="calendar">
+        <div className="month-header">
+          <button onClick={() => handlePreviousMonth(monthType)}>&lt;</button>
+          {format(date, 'MMMM yyyy')}
+          <button onClick={() => handleNextMonth(monthType)}>&gt;</button>
+        </div>
         <div className="weekdays">
           <div className="weekday">Mon</div>
           <div className="weekday">Tue</div>
@@ -80,28 +106,49 @@ export const Calendar: React.FC = () => {
           <div className="weekday">Sat</div>
           <div className="weekday">Sun</div>
         </div>
-        <div className="days">{renderDays(startDate, endDate)}</div>
+        <div className="days">{renderDays(startDate, endDate, currentMonth)}</div>
       </div>
     );
   };
 
-  const handlePreviousMonth = () => {
-    setCurrentDate(addMonths(currentDate, -1));
+  const handlePreviousMonth = (monthType: 'current' | 'future') => {
+    if (monthType === 'current') {
+      setCurrentDate(subMonths(currentDate, 1));
+      if (isSameMonth(currentDate, futureDate)) {
+        setFutureDate(subMonths(futureDate, 1));
+      }
+    } else {
+      const newFutureDate = subMonths(futureDate, 1);
+      if (isSameMonth(newFutureDate, currentDate)) {
+        setCurrentDate(subMonths(currentDate, 1));
+      }
+      setFutureDate(newFutureDate);
+    }
   };
 
-  const handleNextMonth = () => {
-    setCurrentDate(addMonths(currentDate, 1));
+  const handleNextMonth = (monthType: 'current' | 'future') => {
+    if (monthType === 'current') {
+      const newCurrentDate = addMonths(currentDate, 1);
+      if (isSameMonth(newCurrentDate, futureDate)) {
+        setFutureDate(addMonths(futureDate, 1));
+      }
+      setCurrentDate(newCurrentDate);
+    } else {
+      setFutureDate(addMonths(futureDate, 1));
+    }
   };
 
   return (
-    <div>
-      <button onClick={handlePreviousMonth}>Previous Month</button>
-      <button onClick={handleNextMonth}>Next Month</button>
-      <div className="calendar">
-        {renderMonth(currentDate)}
-        {renderMonth(nextMonth)}
+    <div className="calendar-container">
+      <div className="calendars">
+        {renderMonth(currentDate, 'current')}
+        {renderMonth(futureDate, 'future')}
       </div>
       <button onClick={handleReset}>Reset Selection</button>
+      <div className="selected-info">
+        <p>Selected Date: {selectedDate ? format(selectedDate, 'PPP') : 'None'}</p>
+        <p>Selected Range: {periodStart ? format(periodStart, 'PPP') : 'None'} - {periodEnd ? format(periodEnd, 'PPP') : 'None'}</p>
+      </div>
     </div>
   );
 };
